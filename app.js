@@ -579,19 +579,18 @@ function startExamDirectly() {
     const activeTitle = document.getElementById('activeExamTitle');
 
     if (iframe) {
-        iframe.onload = null; // Biarkan siswa bebas bolak-balik Next/Back antar-section
+        iframe.onload = flashFinishBar; // Bar selesai bergetar tiap halaman form berpindah
         iframe.src = activeExam.formUrl;
     }
 
     if (activeTitle) {
-        activeTitle.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Ujian: ${activeExam.subjectName}`;
+        activeTitle.innerText = 'Ujian: ' + activeExam.subjectName;
     }
     
     frameContainer?.classList.remove('hidden');
     requestFullscreenMode();
 
-    // Pantau otomatis setiap 2.5 detik apakah Google Form sudah di-submit
-    
+        
 }
 
 // Simpan status selesai tanpa mengirim data pelanggaran ke server Supabase
@@ -642,23 +641,55 @@ function finishExamUI() {
     }
 }
 
-async function confirmFinished() {
+let flashTimer = null;
+function flashFinishBar() {
+    iframeLoadCount++;
+    if (iframeLoadCount < 2) return;
+
+    const bar = document.getElementById('finishBar');
+    if (!bar) return;
+    bar.classList.add('animate-bounce');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => bar.classList.remove('animate-bounce'), 3000);
+}
+
+function openFinishDialog() {
     if (!activeExam) return;
+    playSound('click');
+    const chk = document.getElementById('finishCheck');
+    const btn = document.getElementById('finishConfirmBtn');
+    if (chk) chk.checked = false;
+    if (btn) btn.disabled = true;
+    const sub = document.getElementById('finishDialogSubject');
+    if (sub) sub.innerText = activeExam.subjectName;
+    document.getElementById('finishDialog')?.classList.remove('hidden');
+}
 
-    // Matikan deteksi pelanggaran sementara agar dialog confirm tidak dihitung pelanggaran
-    const wasActive = isExamActive;
-    isExamActive = false;
-    const lanjut = confirm(
-        'Yakin sudah selesai?\n\n' +
-        'Pastikan jawaban sudah dikirim (tombol KIRIM di Google Form sudah ditekan). ' +
-        'Setelah ini kamu TIDAK bisa masuk lagi ke ujian ini.'
-    );
-    isExamActive = wasActive;
-    if (!lanjut) return;
+function closeFinishDialog() {
+    playSound('click');
+    document.getElementById('finishDialog')?.classList.add('hidden');
+}
 
+function toggleFinishBtn() {
+    const chk = document.getElementById('finishCheck');
+    const btn = document.getElementById('finishConfirmBtn');
+    if (btn) btn.disabled = !(chk && chk.checked);
+}
+
+async function submitFinish() {
+    const chk = document.getElementById('finishCheck');
+    const btn = document.getElementById('finishConfirmBtn');
+    if (!chk || !chk.checked) return;
+
+    if (btn) { btn.disabled = true; btn.innerText = 'Menyimpan...'; }
     const success = await markExamCompleted();
+    if (btn) btn.innerText = 'Ya, Selesaikan Ujian';
+
     if (success) {
+        document.getElementById('finishDialog')?.classList.add('hidden');
         finishExamUI();
+    } else if (btn) {
+        btn.disabled = false;
     }
 }
 
