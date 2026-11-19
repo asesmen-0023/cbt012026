@@ -59,6 +59,7 @@ let activeExam = null;
 let currentAppSettings = null;
 let iframeLoadCount = 0;
 let isInteractingWithForm = false;
+let submissionWatcher = null;
 
 // ==========================================
 // 0. SISTEM AUDIO MP3, PENGUAT 3X & SYNTHESIZER
@@ -378,7 +379,10 @@ document.getElementById('studentLoginForm')?.addEventListener('submit', async (e
     
     if (typeof supabase !== 'undefined' && supabase.createClient) {
         currentClient = supabase.createClient(config.url, config.anonKey, {
-            auth: { persistSession: false, autoRefreshToken: false }
+            auth: { persistSession: false, autoRefreshToken: false },
+            global: {
+                headers: { 'x-cbt-version': '2' }
+            }
         });
     } else {
         showModernAlert('Library Supabase gagal dimuat.', 'Gagal Koneksi', 'error');
@@ -575,8 +579,8 @@ function startExamDirectly() {
     const activeTitle = document.getElementById('activeExamTitle');
 
     if (iframe) {
+        iframe.onload = null; // Biarkan siswa bebas bolak-balik Next/Back antar-section
         iframe.src = activeExam.formUrl;
-        iframe.onload = handleIframeSubmit;
     }
 
     if (activeTitle) {
@@ -585,6 +589,28 @@ function startExamDirectly() {
     
     frameContainer?.classList.remove('hidden');
     requestFullscreenMode();
+
+    // Pantau otomatis setiap 2.5 detik apakah Google Form sudah di-submit
+    if (submissionWatcher) clearInterval(submissionWatcher);
+    submissionWatcher = setInterval(async () => {
+        if (!isExamActive || !activeExam) {
+            clearInterval(submissionWatcher);
+            return;
+        }
+
+        const { data } = await currentClient
+            .from('exam_submissions')
+            .select('is_completed')
+            .eq('nisn', studentNisn)
+            .eq('subject_id', subjectIdStr)
+            .maybeSingle();
+
+        if (data && (data.is_completed === true || String(data.is_completed) === 'true')) {
+            clearInterval(submissionWatcher);
+            localStorage.removeItem(getLocalViolationKey());
+            finishExamUI();
+        }
+    }, 2500);
 }
 
 // Simpan status selesai tanpa mengirim data pelanggaran ke server Supabase
@@ -614,6 +640,10 @@ async function markExamCompleted() {
 }
 
 function finishExamUI() {
+    if (submissionWatcher) {
+        clearInterval(submissionWatcher);
+        submissionWatcher = null;
+    }
     playSound('success');
 
     const iframe = document.getElementById('examIframe');
@@ -631,17 +661,6 @@ function finishExamUI() {
     }
 }
 
-async function handleIframeSubmit() {
-    iframeLoadCount++;
-
-    if (iframeLoadCount >= 2 && activeExam) {
-        const success = await markExamCompleted();
-        if (success) {
-            finishExamUI();
-        }
-    }
-}
-
 async function confirmFinished() {
     if (!activeExam) return;
     if (!confirm('Pastikan Google Form sudah benar-benar terkirim. Lanjutkan keluar?')) return;
@@ -653,6 +672,10 @@ async function confirmFinished() {
 }
 
 function logoutExam() {
+    if (submissionWatcher) {
+        clearInterval(submissionWatcher);
+        submissionWatcher = null;
+    }
     stopViolationAlarm();
     playSound('click');
     isExamActive = false;
