@@ -34,20 +34,20 @@
 
 // Konfigurasi 3 Server Supabase SMAN 1 Jakarta
 const SUPABASE_SERVERS = {
-    "X": {
+  "X": {
     name: "Kelas X",
     url: "https://vztlpnuzoatqfufhahxc.supabase.co",
     anonKey: "sb_publishable_uQ5DBKhfiPupfH6U9Mat-A_T9Dvz67s"
   },
   "XI": {
     name: "Kelas XI",
-    url = "https://ddarscvwzzfosjrvcxfj.supabase.co",
-    anonKey = "sb_publishable_E2tTQ18Vv9Dhlh1vGWBsSw_r9beO-7h"
+    url: "https://ddarscvwzzfosjrvcxfj.supabase.co",
+    anonKey: "sb_publishable_E2tTQ18Vv9Dhlh1vGWBsSw_r9beO-7h"
   },
   "XII": {
     name: "Kelas XII",
-    url = "https://vgatmagwhgwvqxsnlwmw.supabase.co",
-    anonKey = "sb_publishable_5L8wMYxeuVkO-bXqeoOCaQ_oxQfRzHF"
+    url: "https://vgatmagwhgwvqxsnlwmw.supabase.co",
+    anonKey: "sb_publishable_5L8wMYxeuVkO-bXqeoOCaQ_oxQfRzHF"
   }
 };
 
@@ -381,7 +381,7 @@ document.getElementById('studentLoginForm')?.addEventListener('submit', async (e
         currentClient = supabase.createClient(config.url, config.anonKey, {
             auth: { persistSession: false, autoRefreshToken: false },
             global: {
-                headers: { 'x-cbt-version': '2' }
+                headers: { 'x-cbt-version': '3' }
             }
         });
     } else {
