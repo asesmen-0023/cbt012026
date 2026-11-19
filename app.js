@@ -591,26 +591,7 @@ function startExamDirectly() {
     requestFullscreenMode();
 
     // Pantau otomatis setiap 2.5 detik apakah Google Form sudah di-submit
-    if (submissionWatcher) clearInterval(submissionWatcher);
-    submissionWatcher = setInterval(async () => {
-        if (!isExamActive || !activeExam) {
-            clearInterval(submissionWatcher);
-            return;
-        }
-
-        const { data } = await currentClient
-            .from('exam_submissions')
-            .select('is_completed')
-            .eq('nisn', studentNisn)
-            .eq('subject_id', subjectIdStr)
-            .maybeSingle();
-
-        if (data && (data.is_completed === true || String(data.is_completed) === 'true')) {
-            clearInterval(submissionWatcher);
-            localStorage.removeItem(getLocalViolationKey());
-            finishExamUI();
-        }
-    }, 2500);
+    
 }
 
 // Simpan status selesai tanpa mengirim data pelanggaran ke server Supabase
@@ -663,8 +644,18 @@ function finishExamUI() {
 
 async function confirmFinished() {
     if (!activeExam) return;
-    if (!confirm('Pastikan Google Form sudah benar-benar terkirim. Lanjutkan keluar?')) return;
-    
+
+    // Matikan deteksi pelanggaran sementara agar dialog confirm tidak dihitung pelanggaran
+    const wasActive = isExamActive;
+    isExamActive = false;
+    const lanjut = confirm(
+        'Yakin sudah selesai?\n\n' +
+        'Pastikan jawaban sudah dikirim (tombol KIRIM di Google Form sudah ditekan). ' +
+        'Setelah ini kamu TIDAK bisa masuk lagi ke ujian ini.'
+    );
+    isExamActive = wasActive;
+    if (!lanjut) return;
+
     const success = await markExamCompleted();
     if (success) {
         finishExamUI();
