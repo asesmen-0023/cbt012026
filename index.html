@@ -2,7 +2,14 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <style>
+    @keyframes finishGlow {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,.75), 0 8px 20px rgba(0,0,0,.35); }
+        50%      { box-shadow: 0 0 0 14px rgba(251,191,36,0), 0 8px 20px rgba(0,0,0,.35); }
+    }
+    .finish-cta { animation: finishGlow 1.6s ease-in-out infinite; }
+    </style>
     <title>CBT SMAN 1 Jakarta</title>
     <link rel="icon" type="image/png" href="./logo.png">
     <link rel="apple-touch-icon" href="./logo.png">
@@ -222,19 +229,51 @@
         </main>
     </div>
 
-    <!-- TAHAP 3: EMBEDDED GOOGLE FORM UJIAN -->
-    <div id="examFrameContainer" class="hidden fixed inset-0 bg-slate-900 z-50 flex flex-col w-full h-full">
-        <header class="bg-blue-700 text-white px-3 py-2 flex justify-between items-center min-h-[60px] shrink-0 shadow-lg">
-    <button id="btnSelesaiUjian" onclick="confirmFinished()"
-        class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-sm px-5 min-h-[44px] rounded-xl border-2 border-white shadow-lg ring-4 ring-amber-300/50 animate-pulse flex items-center gap-2 transition active:scale-95">
-        <span class="text-base">🏁</span> SELESAI UJIAN
-    </button>
-    <span id="activeExamTitle" class="font-bold text-xs flex items-center gap-2 max-w-[45%] truncate">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Mode Ujian
-    </span>
-</header>
-        <div class="flex-1 w-full h-full relative bg-white">
+        <!-- TAHAP 3: EMBEDDED GOOGLE FORM UJIAN -->
+    <div id="examFrameContainer" class="hidden fixed inset-x-0 top-0 bg-slate-900 z-50 flex flex-col w-full" style="height:100dvh;">
+
+        <!-- BAR ATAS: tombol selesai besar, selalu terlihat -->
+        <div id="finishBar" class="shrink-0 bg-blue-700 px-3 pb-2 shadow-lg" style="padding-top: calc(0.4rem + env(safe-area-inset-top));">
+            <div class="flex items-center gap-2 text-white mb-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                <span id="activeExamTitle" class="font-bold text-[11px] truncate">Mode Ujian</span>
+            </div>
+            <button onclick="openFinishDialog()" class="finish-cta w-full min-h-[56px] rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 border-2 border-white flex flex-col items-center justify-center leading-tight active:scale-95 transition">
+                <span class="text-lg font-black tracking-wide">🏁 SELESAI UJIAN</span>
+                <span class="text-[11px] font-semibold opacity-80">Tekan setelah tombol KIRIM di Google Form</span>
+            </button>
+        </div>
+
+        <div class="flex-1 min-h-0 w-full relative bg-white">
             <iframe id="examIframe" class="w-full h-full border-0" src="" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <!-- DIALOG KONFIRMASI SELESAI UJIAN -->
+    <div id="finishDialog" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-3 z-[9500]">
+        <div class="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 pt-6 pb-5 text-center">
+                <div class="w-14 h-14 mx-auto mb-2 rounded-2xl bg-white/20 flex items-center justify-center text-3xl">🏁</div>
+                <h3 class="text-lg font-extrabold">Selesaikan Ujian?</h3>
+                <p id="finishDialogSubject" class="text-xs text-blue-100 mt-1"></p>
+            </div>
+            <div class="p-5">
+                <label class="flex items-start gap-3 bg-slate-50 border border-slate-200 rounded-2xl p-3 cursor-pointer">
+                    <input type="checkbox" id="finishCheck" onchange="toggleFinishBtn()" class="mt-0.5 w-5 h-5 accent-emerald-500 shrink-0">
+                    <span class="text-xs text-slate-700 leading-relaxed">
+                        Saya sudah menekan <b>KIRIM</b> dan melihat pesan <b>"Jawaban Anda telah direkam"</b>.
+                    </span>
+                </label>
+                <p class="text-[11px] text-rose-500 mt-3 leading-relaxed">Setelah ini kamu tidak bisa membuka ujian ini lagi.</p>
+
+                <button id="finishConfirmBtn" onclick="submitFinish()" disabled
+                    class="w-full mt-4 min-h-[52px] rounded-2xl font-extrabold text-sm text-white bg-emerald-500 disabled:bg-slate-300 disabled:text-slate-500 transition active:scale-95">
+                    Ya, Selesaikan Ujian
+                </button>
+                <button onclick="closeFinishDialog()" class="w-full mt-2 min-h-[44px] rounded-xl font-bold text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
+                    Kembali ke Soal
+                </button>
+            </div>
         </div>
     </div>
 
